@@ -1,8 +1,8 @@
-PREFIX?=riscv64-linux-musl-
+PREFIX?=riscv64-buildroot-linux-musl-
 
 CC=$(PREFIX)gcc
 OBJCOPY=$(PREFIX)objcopy
-MUSL_LIB?=$(shell dirname $(shell which $(CC)))/../riscv64-linux-musl/lib
+MUSL_LIB?=$(shell dirname $(shell which $(CC)))/../riscv64-buildroot-linux-musl/sysroot/lib64
 # CC=musl-gcc
 # OBJCOPY=objcopy
 
@@ -32,7 +32,7 @@ LDLIBS += -Os -s -lpthread -lm -lrt
 # CFLAGS += -D_FILE_OFFSET_BITS=64
 # LDLIBS += -lcrypt -ldl -lresolv -lutil -lpthread
 
-all: dynamic runtest
+all: static dynamic runtest
 
 so: $(DSO_SOS)
 
@@ -76,7 +76,7 @@ common: $(COMMON_OBJS)
 %.so : %.c
 	$(CC) $(CFLAGS) -shared -fPIC $^ -o $@ #$(dir $@)/lib$(notdir $@)
 
-run-all.sh: dynamic runtest
+run-all.sh: static dynamic runtest
 	cat static.txt | xargs -I AA basename AA .exe | sed 's/-/_/g' | xargs -I BB printf "./runtest.exe -w entry-static.exe %s\n" BB > run-static.sh
 	cat dynamic.txt | xargs -I AA basename AA .exe | sed 's/-/_/g' | xargs -I BB printf "./runtest.exe -w entry-dynamic.exe %s\n" BB > run-dynamic.sh
 	echo "./run-static.sh" > run-all.sh
@@ -89,7 +89,7 @@ run: run-all.sh
 disk: run-all.sh
 	mkdir -p disk
 	cp entry-dynamic.exe disk
-#	cp entry-static.exe disk
+	cp entry-static.exe disk
 	cp runtest.exe disk
 	cp src/functional/*.so src/regression/*.so disk
 	cp $(MUSL_LIB)/libc.so disk
